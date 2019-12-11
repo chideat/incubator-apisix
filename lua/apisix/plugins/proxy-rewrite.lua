@@ -20,11 +20,18 @@ local pairs       = pairs
 local ipairs      = ipairs
 local ngx         = ngx
 local type        = type
+local str_gsub    = string_gsub
 
 
 local schema = {
     type = "object",
     properties = {
+        raw_pattern = {
+            description = "raw uri pattern(lua pattern)",
+            type        = "string",
+            minLength   = 1,
+            maxLength   = 4096
+        },
         uri = {
             description = "new uri for upstream",
             type        = "string",
@@ -110,6 +117,12 @@ function _M.rewrite(conf, ctx)
         end
     end
 
+    if conf.raw_pattern and conf.uri then
+        local uri, matched = string_gsub(ctx.var.uri, conf.raw_pattern, conf.uri)
+        if matched > 0 then
+            conf.uri = uri
+        end
+    end
     local upstream_uri = conf.uri or ctx.var.uri
     if ctx.var.is_args == "?" then
         ctx.var.upstream_uri = upstream_uri .. "?" .. (ctx.var.args or "")
